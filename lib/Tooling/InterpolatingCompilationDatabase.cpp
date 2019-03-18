@@ -515,11 +515,20 @@ public:
     auto Lang = guessType(Filename, &TypeCertain);
     if (!TypeCertain)
       Lang = types::TY_INVALID;
-    auto ProxyCommands =
-        Inner->getCompileCommands(Index.chooseProxy(Filename, foldType(Lang)));
-    if (ProxyCommands.empty())
+
+    // Match only similar headers, if they are explicitly named. Ignore similar files.
+    if (Lang == types::TY_CHeader || Lang == types::TY_CXXHeader || types::TY_INVALID)
+    {
+      auto ProxyCommands =
+          Inner->getCompileCommands(Index.chooseProxy(Filename, foldType(Lang)));
+      if (ProxyCommands.empty())
+        return {};
+      return {TransferableCommand(ProxyCommands[0]).transferTo(Filename)};
+    }
+    else
+    {
       return {};
-    return {TransferableCommand(ProxyCommands[0]).transferTo(Filename)};
+    }
   }
 
   std::vector<std::string> getAllFiles() const override {
